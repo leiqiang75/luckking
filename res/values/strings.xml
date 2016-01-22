@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Luck King</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+	<string name="accessibility_description">accessibility_description</string>
+	
+	<string name="fore_tips">红包辅助工具启动</string>
+	<string name="fore_title">红包辅助器</string>
+	<string name="fore_contents">已开启自动抢红包模式</string>
+</resources>
