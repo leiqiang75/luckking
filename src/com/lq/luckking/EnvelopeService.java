@@ -1,6 +1,8 @@
 package com.lq.luckking;
 
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import android.accessibilityservice.AccessibilityService;
 import android.annotation.TargetApi;
@@ -8,10 +10,8 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
-import android.os.Handler;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
@@ -24,19 +24,26 @@ import android.widget.Toast;
  */
 public class EnvelopeService extends AccessibilityService {
 
-	static final String TAG = "Jackie";
+	private static final String TAG_EVENT = "Event";
+	private static final String TAG_OPENING = "Opening";
+	private static final String TAG_FLOW = "Flow";
+	private static final String TAG_TEMP = "Temp";
 
-	/**
-	 * 微信的包名
-	 */
-	static final String WECHAT_PACKAGENAME = "com.tencent.mobileqq";
 	/**
 	 * 红包消息的关键字
 	 */
-	static final String ENVELOPE_TEXT_KEY = "[QQ红包]";
+	private static final String ENVELOPE_TEXT_KEY = "[QQ红包]";
 
-	Handler handler = new Handler();
-
+	/**
+	 * 当前阶段
+	 */
+	public String nowStage = StageEnum.fetched.name();
+	/**
+	 * 待拆的红包队列
+	 */
+	public BlockingQueue<AccessibilityEvent> noOpenList = new LinkedBlockingQueue<AccessibilityEvent>(30);
+	
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -50,60 +57,71 @@ public class EnvelopeService extends AccessibilityService {
 		notification.setLatestEventInfo(this,
 				getResources().getString(R.string.fore_title), 
 				getResources().getString(R.string.fore_contents), pendingIntent);
+		// 1. 注册为前台服务，常驻内存
 		startForeground(1, notification);
 	}
 
 	@Override
-	public void onAccessibilityEvent(AccessibilityEvent event) {
-		final int eventType = event.getEventType();
-
-		Log.d(TAG, "事件---->" + event);
-
-		// 通知栏事件
-		if (eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
-			List<CharSequence> texts = event.getText();
-			if (!texts.isEmpty()) {
-				for (CharSequence t : texts) {
-					String text = String.valueOf(t);
-					if (text.contains(ENVELOPE_TEXT_KEY)) {
-						openNotification(event);
-						break;
-					}
-				}
-			}
-		} else if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-			openEnvelope(event);
-		}
-	}
-
-	/*
-	 * @Override protected boolean onKeyEvent(KeyEvent event) { //return
-	 * super.onKeyEvent(event); return true; }
-	 */
-
-	@Override
 	public void onInterrupt() {
-		Toast.makeText(this, "中断抢红包服务", Toast.LENGTH_SHORT).show();
+		Toast.makeText(this, "停止抢红包", Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
 	protected void onServiceConnected() {
 		super.onServiceConnected();
-		Toast.makeText(this, "连接抢红包服务", Toast.LENGTH_SHORT).show();
+		Toast.makeText(this, "开始抢红包", Toast.LENGTH_SHORT).show();
+	}
+	
+	@Override
+	public void onAccessibilityEvent(AccessibilityEvent event) {
+		final int eventType = event.getEventType();
+
+		Log.d(TAG_EVENT, AccessibilityEvent.eventTypeToString(eventType) + "\n" 
+				+ event.toString());
+
+		// 开启循环拆包线程
+		//loopOpenning();
+		
+		if (eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+			// 如果是通知栏事件，则判断是不是红包通知
+			List<CharSequence> texts = event.getText();
+			if (!texts.isEmpty()) {
+				for (CharSequence t : texts) {
+					String text = String.valueOf(t);
+					if (text.contains(ENVELOPE_TEXT_KEY)) {
+						Log.d(TAG_FLOW, "open the notification");
+						openNotification(event);
+						break;
+					}
+				}
+			}
+		} 
+		else if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+			Log.d(TAG_FLOW, "open the envelope");
+			processMoneyEnvelope(event);
+		}
+		else  if (eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+			processMoneyEnvelope(event);
+		}
 	}
 
-	private void sendNotificationEvent() {
-		AccessibilityManager manager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
-		if (!manager.isEnabled()) {
-			return;
-		}
-		AccessibilityEvent event = AccessibilityEvent
-				.obtain(AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED);
-		event.setPackageName(WECHAT_PACKAGENAME);
-		event.setClassName(Notification.class.getName());
-		CharSequence tickerText = ENVELOPE_TEXT_KEY;
-		event.getText().add(tickerText);
-		manager.sendAccessibilityEvent(event);
+	private void loopOpenning() {
+		// 开启拆包线程
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				while (true) {
+					Log.v(TAG_OPENING, String.valueOf(noOpenList.size()));
+					try {
+						Thread.sleep(60000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}) .start();
 	}
 
 	/**
@@ -124,71 +142,66 @@ public class EnvelopeService extends AccessibilityService {
 			e.printStackTrace();
 		}
 	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void openEnvelope(AccessibilityEvent event) {
-		Log.i("LQ", event.getClassName().toString());
+	
+	/**
+	 * 处理红包
+	 * @param event
+	 */
+	private void processMoneyEnvelope(AccessibilityEvent event) {
+		Log.i(TAG_TEMP, event.getClassName().toString());
 		if ("com.tencent.mobileqq.activity.SplashActivity".equals(event
 				.getClassName())) {
-			// 点中了红包，下一步就是去拆红包
-			checkKey1();
-		} else if ("com.tencent.mobileqq.plugin.luckymoney.ui.LuckyMoneyDetailUI"
+			// 拆红包
+			if (nowStage.equalsIgnoreCase(StageEnum.opening.name())) {
+				// 有正在拆的包，则将当前包加入队列
+				noOpenList.add(event);
+			}
+			else {
+				// 没有正在拆的包，则拆开当前包
+				openMoneyEnvelope();
+			}
+		} else if ("cooperation.qwallet.plugin.QWalletPluginProxyActivity"
 				.equals(event.getClassName())) {
 			// 拆完红包后看详细的纪录界面
 			// nonething
-		} else if ("com.tencent.mobileqq.ui.LauncherUI".equals(event
-				.getClassName())) {
-			// 在聊天界面,去点中红包
-			checkKey2();
+			boolean flag3 = performGlobalAction(GLOBAL_ACTION_BACK);
+			Log.i(TAG_OPENING, "back : " + String.valueOf(flag3));
+		}
+		else if ("android.widget.AbsListView".equals(event.getClassName())) {
+			if (nowStage.equalsIgnoreCase(StageEnum.opening.name())) {
+				// 有正在拆的包，则将当前包加入队列
+				noOpenList.add(event);
+			}
+			else {
+				// 没有正在拆的包，则拆开当前包
+				openMoneyEnvelope();
+			}
 		}
 	}
 
+	/**
+	 * 拆包
+	 */
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void checkKey1() {
+	private void openMoneyEnvelope() {
+		nowStage = StageEnum.opening.name();
+		// 当前聊天窗口节点
 		AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
 		if (nodeInfo == null) {
-			Log.w(TAG, "rootWindow为空");
+			Log.w(TAG_OPENING, "rootWindow为空");
 			return;
 		}
-		Log.i("LQ", "C1 " + nodeInfo.toString());
+		
+		// 当前聊天窗口中的红包信息节点集合
 		List<AccessibilityNodeInfo> list = nodeInfo
 				.findAccessibilityNodeInfosByText("点击拆开");
-		Log.i("LQ", "包 " + list.size());
+		Log.i(TAG_OPENING, "Size:" + list.size());
 		for (AccessibilityNodeInfo n : list) {
-			Log.i("LQ", "parent " + n.getParent().toString());
+			Log.i(TAG_TEMP, "parent " + n.getParent().toString());
 			boolean flag2 = n.getParent().performAction(
 					AccessibilityNodeInfo.ACTION_CLICK);
-			Log.i("LQ", "click " + String.valueOf(flag2));
+			Log.i(TAG_OPENING, "click : " + String.valueOf(flag2));
 		}
-	}
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void checkKey2() {
-		AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
-		if (nodeInfo == null) {
-			Log.w(TAG, "rootWindow为空");
-			return;
-		}
-		Log.i("LQ", "C2 " + nodeInfo.toString());
-		List<AccessibilityNodeInfo> list = nodeInfo
-				.findAccessibilityNodeInfosByText("点击拆开");
-		if (list.isEmpty()) {
-			list = nodeInfo.findAccessibilityNodeInfosByText(ENVELOPE_TEXT_KEY);
-			for (AccessibilityNodeInfo n : list) {
-				Log.i(TAG, "-->微信红包:" + n);
-				n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-				break;
-			}
-		} else {
-			// 最新的红包领起
-			for (int i = list.size() - 1; i >= 0; i--) {
-				AccessibilityNodeInfo parent = list.get(i).getParent();
-				Log.i(TAG, "-->领取红包:" + parent);
-				if (parent != null) {
-					parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-					break;
-				}
-			}
-		}
+		nowStage = StageEnum.fetched.name();
 	}
 }
