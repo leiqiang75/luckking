@@ -24,6 +24,7 @@ import android.widget.Toast;
  */
 public class EnvelopeService extends AccessibilityService {
 
+	
 	private static final String TAG_EVENT = "Event";
 	private static final String TAG_OPENING = "Opening";
 	private static final String TAG_FLOW = "Flow";
@@ -33,7 +34,32 @@ public class EnvelopeService extends AccessibilityService {
 	 * 红包消息的关键字
 	 */
 	private static final String ENVELOPE_TEXT_KEY = "[QQ红包]";
+	/**
+	 * 普通红包未拆开时的关键字
+	 */
+	private static final String ENVELOPE_CLICK_TEXT_KEY = "点击拆开";
+	/**
+	 * 口令红包未拆开时的关键字
+	 */
+	private static final String PASSWORD_ENVELOPE_TEXT_KEY = "口令红包";
+	/**
+	 * 点击口令红包后的关键字输入按钮名称
+	 */
+	private static final String INPUT_PASSWORD_TEXT_KEY = "点击输入口令";
+	/**
+	 * 聊天窗口唯一的发送按钮
+	 */
+	private static final String GLOBAL_SEND_BUTTON_KEY = "android.widget.Button";
+	/**
+	 * 全局发送按钮的关键字
+	 */
+	private static final String GLOBAL_SENT_TEXT_KEY = "发送";
+	/**
+	 * 口令红包被抢完后的提示信息view关键字
+	 */
+	private static final String GLOBAL_TIPS_PASSWORD_OVER = "android.widget.TextView";
 
+	public static boolean autoBackFlag = false;
 	/**
 	 * 当前阶段
 	 */
@@ -42,6 +68,11 @@ public class EnvelopeService extends AccessibilityService {
 	 * 待拆的红包队列
 	 */
 	public BlockingQueue<AccessibilityEvent> noOpenList = new LinkedBlockingQueue<AccessibilityEvent>(30);
+	
+	/**
+	 * 全局的消息发送按钮
+	 */
+	AccessibilityNodeInfo sendNode;
 	
 	@SuppressWarnings("deprecation")
 	@Override
@@ -105,25 +136,6 @@ public class EnvelopeService extends AccessibilityService {
 		}
 	}
 
-	private void loopOpenning() {
-		// 开启拆包线程
-		new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				while (true) {
-					Log.v(TAG_OPENING, String.valueOf(noOpenList.size()));
-					try {
-						Thread.sleep(60000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		}) .start();
-	}
-
 	/**
 	 * 打开通知栏消息
 	 */
@@ -148,7 +160,6 @@ public class EnvelopeService extends AccessibilityService {
 	 * @param event
 	 */
 	private void processMoneyEnvelope(AccessibilityEvent event) {
-		Log.i(TAG_TEMP, event.getClassName().toString());
 		if ("com.tencent.mobileqq.activity.SplashActivity".equals(event
 				.getClassName())) {
 			// 拆红包
@@ -160,7 +171,7 @@ public class EnvelopeService extends AccessibilityService {
 				// 没有正在拆的包，则拆开当前包
 				openMoneyEnvelope();
 			}
-		} else if ("cooperation.qwallet.plugin.QWalletPluginProxyActivity"
+		} else if (autoBackFlag && "cooperation.qwallet.plugin.QWalletPluginProxyActivity"
 				.equals(event.getClassName())) {
 			// 拆完红包后看详细的纪录界面
 			// nonething
@@ -187,20 +198,50 @@ public class EnvelopeService extends AccessibilityService {
 		nowStage = StageEnum.opening.name();
 		// 当前聊天窗口节点
 		AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+		
+		if (null == sendNode) {
+			List<AccessibilityNodeInfo> sendBtnlist = nodeInfo
+					.findAccessibilityNodeInfosByText(GLOBAL_SENT_TEXT_KEY);
+			if (null != sendBtnlist && !sendBtnlist.isEmpty()) {
+				for (AccessibilityNodeInfo node : sendBtnlist) {
+					if (node.getClassName().toString().equals(GLOBAL_SEND_BUTTON_KEY) 
+							&& node.getText().toString().equals(GLOBAL_SENT_TEXT_KEY)) {
+						sendNode = sendBtnlist.get(0);
+						break;
+					}
+				}
+			}
+		}
 		if (nodeInfo == null) {
 			Log.w(TAG_OPENING, "rootWindow为空");
 			return;
 		}
 		
-		// 当前聊天窗口中的红包信息节点集合
-		List<AccessibilityNodeInfo> list = nodeInfo
-				.findAccessibilityNodeInfosByText("点击拆开");
-		Log.i(TAG_OPENING, "Size:" + list.size());
-		for (AccessibilityNodeInfo n : list) {
-			Log.i(TAG_TEMP, "parent " + n.getParent().toString());
+		// 当前聊天窗口中的未拆开普通红包信息节点集合
+		List<AccessibilityNodeInfo> genlist = nodeInfo
+				.findAccessibilityNodeInfosByText(ENVELOPE_CLICK_TEXT_KEY);
+		Log.i(TAG_OPENING, "General Size:" + genlist.size());
+		for (AccessibilityNodeInfo n : genlist) {
 			boolean flag2 = n.getParent().performAction(
 					AccessibilityNodeInfo.ACTION_CLICK);
 			Log.i(TAG_OPENING, "click : " + String.valueOf(flag2));
+		}
+		
+		// 当前聊天窗口中的未拆开普通红包信息节点集合
+		List<AccessibilityNodeInfo> pdlist = nodeInfo
+				.findAccessibilityNodeInfosByText(PASSWORD_ENVELOPE_TEXT_KEY);
+		Log.i(TAG_OPENING, "Password Size:" + pdlist.size());
+		for (AccessibilityNodeInfo n : pdlist) {
+			if (PASSWORD_ENVELOPE_TEXT_KEY.equalsIgnoreCase(String.valueOf(n.getText()))) {
+				n.getParent().performAction(
+						AccessibilityNodeInfo.ACTION_CLICK);
+				List<AccessibilityNodeInfo> inputlist = nodeInfo
+						.findAccessibilityNodeInfosByText(INPUT_PASSWORD_TEXT_KEY);
+				if (null != inputlist && !inputlist.isEmpty()) {
+					inputlist.get(0).getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
+					sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+				}
+			}
 		}
 		nowStage = StageEnum.fetched.name();
 	}

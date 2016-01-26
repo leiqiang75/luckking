@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Luck King</string>
+    <string name="app_name">QQ红包辅助器</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 	<string name="accessibility_description">accessibility_description</string>
 	
-	<string name="fore_tips">红包辅助工具启动</string>
-	<string name="fore_title">红包辅助器</string>
+	<string name="fore_tips">QQ红包辅助工具启动</string>
+	<string name="fore_title">QQ红包辅助器</string>
 	<string name="fore_contents">已开启自动抢红包模式</string>
+	
+	<string name="btn_assist_start">开启QQ红包辅助服务</string>
+	<string name="btn_assist_close">关闭QQ红包辅助服务</string>
+	<string name="btn_auto_back_start">开启抢红包自动返回功能</string>
+	<string name="btn_auto_back_close">关闭抢红包自动返回功能</string>
 </resources>
