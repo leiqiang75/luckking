@@ -8,6 +8,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import com.lq.luckking.utils.OnOffHelper;
   
 public class MainActivity extends Activity {
 	/**
@@ -57,11 +59,11 @@ public class MainActivity extends Activity {
             public void onClick(View v) {  
 	            String title = autoBackBtn.getText().toString();
 	            if (getResources().getString(R.string.btn_auto_back_start).equalsIgnoreCase(title)) {
-	            	EnvelopeService.autoBackFlag = true;
+	            	OnOffHelper.autoBackFlag = true;
 	            	autoBackBtn.setText(R.string.btn_auto_back_close);
 	            }
 	            else {
-	            	EnvelopeService.autoBackFlag = false;
+	            	OnOffHelper.autoBackFlag = false;
 	            	autoBackBtn.setText(R.string.btn_auto_back_start);
 	            }
             }  

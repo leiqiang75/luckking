@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.lq.luckking;
+package com.lq.luckking.constant;
 
 /**
  * 阶段枚举值
