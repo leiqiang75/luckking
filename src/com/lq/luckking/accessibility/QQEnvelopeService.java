@@ -8,7 +8,6 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
-import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
@@ -165,9 +164,29 @@ public class QQEnvelopeService extends AccessibilityService {
 		// 当前聊天窗口节点
 		AccessibilityNodeInfo rootNode = getRootInActiveWindow();
 		
+		if (rootNode == null) {
+			return;
+		}
 		// 查找聊天界面中的发送按钮，应该是全局唯一
+		initGlobalSendButton(rootNode);
+		// 处理普通红包
+		openGenEnvelope(rootNode);
+		// 处理口令红包
+		openPasswordEnvelope(rootNode);
+		
+		nowStage = StageEnum.opened.name();
+	}
+
+	/**
+	 * 初始化全局唯一发送按钮用于口令红包的发送
+	 * Description: <br> 
+	 *  
+	 * @author lei.qiang<br>
+	 * @taskId <br>
+	 * @param rootNode <br>
+	 */
+	private void initGlobalSendButton(AccessibilityNodeInfo rootNode) {
 		if (null == sendNode) {
-			Log.v("Temp", "sendButton");
 			List<AccessibilityNodeInfo> sendBtnlist = rootNode
 					.findAccessibilityNodeInfosByText(QQEnvelopeHelper.GLOBAL_SENT_TEXT_KEY);
 			if (null != sendBtnlist && !sendBtnlist.isEmpty()) {
@@ -180,28 +199,22 @@ public class QQEnvelopeService extends AccessibilityService {
 				}
 			}
 		}
-		
-		if (rootNode == null) {
-			return;
-		}
-		
-		// 当前聊天窗口中的未拆开普通红包信息节点集合
-		List<AccessibilityNodeInfo> genlist = rootNode
-				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY);
-		for (AccessibilityNodeInfo node : genlist) {
-			if (!node.isClickable()) {
-				Log.i("Temp", "普通红包 node name :" + node.getText());
-				// 非textView的才能点击
-				node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
-			}
-		}
-		
+	}
+
+	/**
+	 * 处理口令红包，口令红包与普通红包操作流程不一样，需要3次点击
+	 * Description: <br> 
+	 *  
+	 * @author lei.qiang<br>
+	 * @taskId <br>
+	 * @param rootNode <br>
+	 */
+	private void openPasswordEnvelope(AccessibilityNodeInfo rootNode) {
 		// 当前聊天窗口中的未拆开普通红包信息节点集合
 		List<AccessibilityNodeInfo> pdlist = rootNode
 				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.PASSWORD_ENVELOPE_UNCLICK_TEXT_KEY);
 		for (AccessibilityNodeInfo node : pdlist) {
 			if (!node.isClickable() && QQEnvelopeHelper.PASSWORD_ENVELOPE_UNCLICK_TEXT_KEY.equalsIgnoreCase(String.valueOf(node.getText()))) {
-				Log.i("Temp", "口令红包 node name :" + node.getText());
 				node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
 				List<AccessibilityNodeInfo> inputlist = rootNode
 						.findAccessibilityNodeInfosByText(QQEnvelopeHelper.INPUT_PASSWORD_BUTTON_KEY);
@@ -213,7 +226,25 @@ public class QQEnvelopeService extends AccessibilityService {
 				}
 			}
 		}
-		
-		nowStage = StageEnum.opened.name();
+	}
+
+	/**
+	 * 处理普通红包，只需要一次点击
+	 * Description: <br> 
+	 *  
+	 * @author lei.qiang<br>
+	 * @taskId <br>
+	 * @param rootNode <br>
+	 */
+	private void openGenEnvelope(AccessibilityNodeInfo rootNode) {
+		// 当前聊天窗口中的未拆开普通红包信息节点集合
+		List<AccessibilityNodeInfo> genlist = rootNode
+				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY);
+		for (AccessibilityNodeInfo node : genlist) {
+			if (!node.isClickable()) {
+				// 非textView的才能点击
+				node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
+			}
+		}
 	}
 }
