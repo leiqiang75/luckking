@@ -16,4 +16,14 @@ public abstract class OnOffHelper {
 	 * 抢完红包是否自动关闭详情界面的开关
 	 */
 	public static boolean autoBackFlag = false;
+	
+	/**
+	 * QQ 辅助服务是否开启的标识
+	 */
+	public static boolean qqAsHasOpened = false;
+	
+	/**
+	 * 微信辅助服务是否开启的标识
+	 */
+	public static boolean wechatAsHasOpened = false;
 }

@@ -16,7 +16,13 @@ package com.lq.luckking.utils;
  * @since V1.0<br>
  * @see com.lq.luckking.utils <br>
  */
-
 public final class WeChatEnvelopeHelper {
-
+	/**
+	 * 红包消息的关键字(普通红包和口令红包获取都是这个关键字)
+	 */
+	public static final String ENVELOPE_TEXT_KEY = "[微信红包]";
+	/**
+	 * 普通红包未拆开时的关键字
+	 */
+	public static final String ENVELOPE_UNCLICK_TEXT_KEY = "领取红包";
 }

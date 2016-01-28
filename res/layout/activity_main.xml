@@ -5,18 +5,25 @@
     android:orientation="vertical" >
 
         <Button
-            android:id="@+id/btn_assist"
+            android:id="@+id/btn_qq_assist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:text="@string/btn_assist_start"
+            android:text="@string/btn_qq_assist_start"
             android:textSize="18sp" />
 
+      	<Button
+            android:id="@+id/btn_wechat_assist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/btn_wechat_assist_start"
+            android:textSize="18sp" />
+        
         <Button
             android:id="@+id/btn_auto_back"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:enabled="false"
             android:padding="10dp"
             android:text="@string/btn_auto_back_start"
             android:textSize="18sp" />

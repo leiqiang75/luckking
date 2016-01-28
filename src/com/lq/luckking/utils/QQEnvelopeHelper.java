@@ -26,6 +26,15 @@ public final class QQEnvelopeHelper {
 	 */
 	public static final String ENVELOPE_UNCLICK_TEXT_KEY = "点击拆开";
 	/**
+	 * 普通个性化红包未拆开时的关键字1
+	 */
+	public static final String SPECIAL_ENVELOPE_UNCLICK_TEXT_KEY1 = "查看详情";
+	/**
+	 * 普通个性化红包未拆开时的关键字1
+	 */
+	public static final String SPECIAL_ENVELOPE_UNCLICK_TEXT_KEY2 = "QQ红包个性版";
+	
+	/**
 	 * 口令红包未拆开时的关键字
 	 */
 	public static final String PASSWORD_ENVELOPE_UNCLICK_TEXT_KEY = "口令红包";
