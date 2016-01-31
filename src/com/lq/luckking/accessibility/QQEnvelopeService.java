@@ -163,7 +163,7 @@ public class QQEnvelopeService extends AccessibilityService {
 					.getClassName())) {
 				nowStage = StageEnum.fetching.name();
 				// 聊天窗体，点开红包
-				scanAndOpenEnvelope();
+				scanAndOpenEnvelope(event);
 			} else if (OnOffHelper.autoBackFlag 
 					&& "cooperation.qwallet.plugin.QWalletPluginProxyActivity".equals(event.getClassName())
 					&& nowStage.equalsIgnoreCase(StageEnum.opened.name())) {
@@ -174,7 +174,7 @@ public class QQEnvelopeService extends AccessibilityService {
 			else if ("android.widget.AbsListView".equals(event.getClassName())) {
 				nowStage = StageEnum.fetching.name();
 				// 没有正在拆的包，则拆开当前包
-				scanAndOpenEnvelope();
+				scanAndOpenEnvelope(event);
 			}			
 		}
 	}
@@ -187,10 +187,10 @@ public class QQEnvelopeService extends AccessibilityService {
 	 * @taskId <br> <br>
 	 */
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void scanAndOpenEnvelope() {
+	private void scanAndOpenEnvelope(AccessibilityEvent event) {
 		nowStage = StageEnum.opening.name();
-		// 当前聊天窗口节点
-		AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+		// 当前事件所属的信息节点
+		AccessibilityNodeInfo rootNode = event.getSource();
 		
 		if (rootNode == null) {
 			return;
@@ -321,7 +321,7 @@ public class QQEnvelopeService extends AccessibilityService {
 					&& (QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY2.equalsIgnoreCase(String.valueOf(parent.getChild(2).getText())) 
 							|| QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY3.equalsIgnoreCase(String.valueOf(parent.getChild(2).getText())))) {
 				node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
-				List<AccessibilityNodeInfo> inputlist = rootNode
+				List<AccessibilityNodeInfo> inputlist = getRootInActiveWindow()
 						.findAccessibilityNodeInfosByText(QQEnvelopeHelper.INPUT_PASSWORD_BUTTON_KEY);
 				if (null != inputlist && !inputlist.isEmpty()) {
 					// 点击输入口令
