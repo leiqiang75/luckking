@@ -92,10 +92,6 @@ public class WeChatEnvelopeService extends AccessibilityService {
 	public void onAccessibilityEvent(AccessibilityEvent event) {
 		final int eventType = event.getEventType();
 
-		Log.v("Event", "eventType : " + event.eventTypeToString(eventType));
-		Log.v("Event", "className : " + event.getClassName());
-		Log.v("Event", "text : " + event.getText());
-		
 		if (eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
 			// 如果是通知栏事件，则判断是不是红包通知，是则打开通知,进入有红包的聊天界面
 			String text = String.valueOf(event.getText());

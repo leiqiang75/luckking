@@ -26,4 +26,9 @@ public abstract class OnOffHelper {
 	 * 微信辅助服务是否开启的标识
 	 */
 	public static boolean wechatAsHasOpened = false;
+	
+	/**
+	 * 咻红包服务是否开启的标识
+	 */
+	public static boolean xiuAsHasOpened = false;
 }

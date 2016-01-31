@@ -1,5 +1,6 @@
 package com.lq.luckking.accessibility;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import android.accessibilityservice.AccessibilityService;
@@ -8,7 +9,6 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
-import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
@@ -43,7 +43,12 @@ public class QQEnvelopeService extends AccessibilityService {
 	/**
 	 * 全局的消息发送按钮
 	 */
-	AccessibilityNodeInfo sendNode;
+	private AccessibilityNodeInfo sendNode;
+	
+	/**
+	 * 已经开过的个性化红包列表
+	 */
+	private List<Integer> openedList = new LinkedList<Integer>();
 	
 	/**
 	 * 主要将服务注册为前台服务，常驻内存
@@ -203,27 +208,6 @@ public class QQEnvelopeService extends AccessibilityService {
 	}
 
 	/**
-	 * 处理个性化红包，与普通红包以及口令红包规则不一样，个性化红包拆过后在界面表现的状态没有变化
-	 * 难点在于识别哪些是拆过的红包
-	 * Description: <br> 
-	 *  
-	 * @author lei.qiang<br>
-	 * @taskId <br>
-	 * @param rootNode <br>
-	 */
-	private void openSpecialGenEnvelope(AccessibilityNodeInfo rootNode) {
-		// 当前聊天窗口中的未拆开普通红包信息节点集合
-		List<AccessibilityNodeInfo> specialGenlist = rootNode
-				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.SPECIAL_ENVELOPE_UNCLICK_TEXT_KEY1);
-		for (AccessibilityNodeInfo node : specialGenlist) {
-			if (!node.isSelected() && QQEnvelopeHelper.SPECIAL_ENVELOPE_UNCLICK_TEXT_KEY2.equalsIgnoreCase(String.valueOf(node.getChild(0).getText()))) {
-				// 非textView的才能点击
-				node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-			}
-		}
-	}
-
-	/**
 	 * 初始化全局唯一发送按钮用于口令红包的发送
 	 * Description: <br> 
 	 *  
@@ -246,6 +230,75 @@ public class QQEnvelopeService extends AccessibilityService {
 			}
 		}
 	}
+	
+	/**
+	 * 处理个性化红包，与普通红包以及口令红包规则不一样，个性化红包拆过后在界面表现的状态没有变化
+	 * 难点在于识别哪些是拆过的红包
+	 * 2016.1.30 个性化红包只拆新的，不拆老的
+	 * Description: <br> 
+	 *  
+	 * @author lei.qiang<br>
+	 * @taskId <br>
+	 * @param rootNode <br>
+	 */
+	private void openSpecialGenEnvelope(AccessibilityNodeInfo rootNode) {
+		// 当前聊天窗口中的未拆开普通红包信息节点集合
+		List<AccessibilityNodeInfo> specialGenlist = rootNode
+				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.SPECIAL_ENVELOPE_UNCLICK_TEXT_KEY1);
+		if (null != specialGenlist && !specialGenlist.isEmpty()) {
+			specialGenlist.get(specialGenlist.size() - 1);
+		}
+		List<AccessibilityNodeInfo> realSpecialList = new LinkedList<AccessibilityNodeInfo>();
+		for (AccessibilityNodeInfo node : specialGenlist) {
+			if (null != node.getChild(0) 
+					&& (QQEnvelopeHelper.SPECIAL_ENVELOPE_UNCLICK_TEXT_KEY2.equalsIgnoreCase(String.valueOf(node.getChild(0).getText()))
+							|| QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY3.equalsIgnoreCase(String.valueOf(node.getChild(0).getText())))) {
+				realSpecialList.add(node);
+			}
+		}
+		
+		if (!realSpecialList.isEmpty()) {
+			AccessibilityNodeInfo lastNode = realSpecialList.get(realSpecialList.size() - 1);
+			if (openedList.isEmpty()) {
+				// 如果开过的列表为空，则realSpecialList 列表红包全部打开
+				for (AccessibilityNodeInfo node : realSpecialList) {
+					node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+					openedList.add(node.hashCode());
+				}
+			}
+			else if (realSpecialList.size() == openedList.size()) {
+				// 长度一样，比较最后一个，判断是有新红包
+				if (lastNode.hashCode() == openedList.get(realSpecialList.size() - 1)) {
+					// 如果一样，则表示没有新红包出现
+					openedList.clear();
+					for (AccessibilityNodeInfo node : realSpecialList) {
+						openedList.add(node.hashCode());
+					}
+				}
+				else {
+					openedList.clear();
+					for (AccessibilityNodeInfo node : realSpecialList) {
+						openedList.add(node.hashCode());
+					}
+					// 如果不一样，则最后一个肯定是新红包，就开最后一个红包就好了,能适用大部分情况，毕竟没有人连续发4个红包(魅族4一屏最多4个红包)，而没有人抢
+					lastNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+				}
+			}
+			else {
+				// 长度不一样，肯定是有新的红包出现，把老的顶出了屏幕外
+				openedList.clear();
+				for (AccessibilityNodeInfo node : realSpecialList) {
+					openedList.add(node.hashCode());
+				}
+				// 如果不一样，则最后一个肯定是新红包，就开最后一个红包就好了,能适用大部分情况，毕竟没有人连续发4个红包(魅族4一屏最多4个红包)，而没有人抢
+				lastNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+			}
+		}
+		else {
+			// 如果当前页面没有个性化红包，则将openedList清空
+			openedList.clear();
+		}
+	}
 
 	/**
 	 * 处理口令红包，口令红包与普通红包操作流程不一样，需要3次点击
@@ -260,7 +313,13 @@ public class QQEnvelopeService extends AccessibilityService {
 		List<AccessibilityNodeInfo> pdlist = rootNode
 				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.PASSWORD_ENVELOPE_UNCLICK_TEXT_KEY);
 		for (AccessibilityNodeInfo node : pdlist) {
-			if (!node.isClickable() && QQEnvelopeHelper.PASSWORD_ENVELOPE_UNCLICK_TEXT_KEY.equalsIgnoreCase(String.valueOf(node.getText()))) {
+			AccessibilityNodeInfo parent = node.getParent();
+			if (!node.isClickable()
+					&& null != parent
+					&& parent.getChildCount() == 3
+					&& QQEnvelopeHelper.PASSWORD_ENVELOPE_UNCLICK_TEXT_KEY.equalsIgnoreCase(String.valueOf(node.getText()))
+					&& (QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY2.equalsIgnoreCase(String.valueOf(parent.getChild(2).getText())) 
+							|| QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY3.equalsIgnoreCase(String.valueOf(parent.getChild(2).getText())))) {
 				node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
 				List<AccessibilityNodeInfo> inputlist = rootNode
 						.findAccessibilityNodeInfosByText(QQEnvelopeHelper.INPUT_PASSWORD_BUTTON_KEY);
@@ -285,11 +344,14 @@ public class QQEnvelopeService extends AccessibilityService {
 	private void openGenEnvelope(AccessibilityNodeInfo rootNode) {
 		// 当前聊天窗口中的未拆开普通红包信息节点集合
 		List<AccessibilityNodeInfo> genlist = rootNode
-				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY);
+				.findAccessibilityNodeInfosByText(QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY1);
 		for (AccessibilityNodeInfo node : genlist) {
-			if (!node.isClickable()) {
+			AccessibilityNodeInfo parent = node.getParent();
+			if (null != parent 
+					&& null != parent.getChild(2)
+					&& QQEnvelopeHelper.ENVELOPE_UNCLICK_TEXT_KEY2.equalsIgnoreCase(String.valueOf(parent.getChild(2).getText()))) {
 				// 非textView的才能点击
-				node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
+				parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
 			}
 		}
 	}

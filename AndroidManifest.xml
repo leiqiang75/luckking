@@ -49,6 +49,20 @@
                 android:name="android.accessibilityservice"  
                 android:resource="@xml/wechat_envelope_service_config"/>  
         </service>
+        
+        <service  
+            android:enabled="true"  
+            android:exported="true"  
+            android:label="@string/alipay_xiu_accessibility_service_name"
+            android:name="com.lq.luckking.accessibility.XiuEnvelopeService"  
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">  
+            <intent-filter>  
+                <action android:name="android.accessibilityservice.AccessibilityService"/>  
+            </intent-filter>  
+            <meta-data  
+                android:name="android.accessibilityservice"  
+                android:resource="@xml/alipay_xiu_envelope_service_config"/>  
+        </service>
     </application>
 
 </manifest>

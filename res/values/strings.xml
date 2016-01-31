@@ -3,6 +3,7 @@
     <string name="app_name">红包辅助服务</string>
     <string name="qq_accessibility_service_name">QQ红包辅助服务</string>
     <string name="wechat_accessibility_service_name">微信红包辅助服务</string>
+    <string name="alipay_xiu_accessibility_service_name">支付宝咻红包辅助服务</string>
     <string name="action_settings">Settings</string>
 	<string name="accessibility_description">accessibility_description</string>
 
@@ -21,14 +22,19 @@
 	<string name="fore_wechat_contents">已开启自动抢微信红包模式</string>
 	
 	<!-- 支付宝 咻 红包相关定义 start -->
+	<string name="tips_alipay_xiu_envelope_accessibility_start">开启支付宝咻红包辅助器</string>
+	<string name="tips_alipay_xiu_envelope_accessibility_end">关闭支付宝咻红包辅助器</string>
 	<string name="fore_alipay_tips">支付宝咻红包辅助工具启动</string>
 	<string name="fore_alipay_title">支付宝咻红包辅助器</string>
 	<string name="fore_alipay_contents">已开启自动抢支付宝咻红包模式</string>
 
+	<!-- button -->
 	<string name="btn_qq_assist_start">开启QQ红包辅助服务</string>
 	<string name="btn_qq_assist_close">关闭QQ红包辅助服务</string>
 	<string name="btn_wechat_assist_start">开启微信红包辅助服务</string>
 	<string name="btn_wechat_assist_close">关闭微信红包辅助服务</string>
+	<string name="btn_alipay_xiu_assist_start">开启支付宝咻红包辅助服务</string>
+	<string name="btn_alipay_xiu_assist_close">关闭支付宝咻红包辅助服务</string>
 	<string name="btn_auto_back_start">开启抢红包自动返回功能</string>
 	<string name="btn_auto_back_close">关闭抢红包自动返回功能</string>
 </resources>

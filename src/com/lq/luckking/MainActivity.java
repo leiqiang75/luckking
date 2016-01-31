@@ -22,6 +22,11 @@ public class MainActivity extends Activity implements OnClickListener{
 	 * 是否开启抢微信红包的按钮
 	 */
     private Button wechatAssistBtn;
+
+    /**
+	 * 是否开启咻红包的按钮
+	 */
+    private Button xiuAssistBtn;
     
     /**
      * 抢完红包是否自动返回的开关按钮
@@ -35,10 +40,12 @@ public class MainActivity extends Activity implements OnClickListener{
   
         qqAssistBtn = null == qqAssistBtn ? (Button) findViewById(R.id.btn_qq_assist) : qqAssistBtn;
         wechatAssistBtn = null == wechatAssistBtn ? (Button) findViewById(R.id.btn_wechat_assist) : wechatAssistBtn;
+        xiuAssistBtn = null == xiuAssistBtn ? (Button) findViewById(R.id.btn_xiu_assist) : xiuAssistBtn; 
         autoBackBtn = null == autoBackBtn ? (Button) findViewById(R.id.btn_auto_back) : autoBackBtn;
         
         qqAssistBtn.setOnClickListener(this);
         wechatAssistBtn.setOnClickListener(this);
+        xiuAssistBtn.setOnClickListener(this);
         autoBackBtn.setOnClickListener(this);
     }
 
@@ -62,6 +69,13 @@ public class MainActivity extends Activity implements OnClickListener{
         }
         else {
         	wechatAssistBtn.setText(R.string.btn_wechat_assist_start);
+        }
+        
+        if (OnOffHelper.xiuAsHasOpened) {
+        	xiuAssistBtn.setText(R.string.btn_alipay_xiu_assist_close);
+        }
+        else {
+        	xiuAssistBtn.setText(R.string.btn_alipay_xiu_assist_start);
         }
         
         if (OnOffHelper.autoBackFlag) {
@@ -112,6 +126,7 @@ public class MainActivity extends Activity implements OnClickListener{
 				break;
 			case R.id.btn_qq_assist:
 			case R.id.btn_wechat_assist:
+			case R.id.btn_xiu_assist:
 				//打开系统设置中辅助功能  
                 Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);  
                 startActivity(intent);  

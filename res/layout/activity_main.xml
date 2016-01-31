@@ -20,6 +20,14 @@
             android:text="@string/btn_wechat_assist_start"
             android:textSize="18sp" />
         
+      	<Button
+            android:id="@+id/btn_xiu_assist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/btn_alipay_xiu_assist_start"
+            android:textSize="18sp" />
+      	
         <Button
             android:id="@+id/btn_auto_back"
             android:layout_width="match_parent"

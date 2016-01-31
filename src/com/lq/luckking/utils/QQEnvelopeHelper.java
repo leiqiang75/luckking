@@ -24,7 +24,15 @@ public final class QQEnvelopeHelper {
 	/**
 	 * 普通红包未拆开时的关键字
 	 */
-	public static final String ENVELOPE_UNCLICK_TEXT_KEY = "点击拆开";
+	public static final String ENVELOPE_UNCLICK_TEXT_KEY1 = "点击拆开";
+	/**
+	 * 红包 关键字(普通红包和口令红包)
+	 */
+	public static final String ENVELOPE_UNCLICK_TEXT_KEY2 = "QQ红包";
+	/**
+	 * 红包 关键字(自己发的口令红包)
+	 */
+	public static final String ENVELOPE_UNCLICK_TEXT_KEY3 = "查看领取详情";
 	/**
 	 * 普通个性化红包未拆开时的关键字1
 	 */
@@ -46,6 +54,10 @@ public final class QQEnvelopeHelper {
 	 * 聊天窗口唯一的发送按钮组件标识
 	 */
 	public static final String GLOBAL_SEND_BUTTON_KEY = "android.widget.Button";
+	/**
+	 * 聊天窗口唯一的消息输入组件标识
+	 */
+	public static final String GLOBAL_SEND_INPUT_KEY = "android.widget.EditText";
 	/**
 	 * 全局发送按钮的关键字
 	 */
