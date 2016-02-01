@@ -99,6 +99,8 @@ public class QQEnvelopeService extends AccessibilityService {
 	public void onAccessibilityEvent(AccessibilityEvent event) {
 		final int eventType = event.getEventType();
 
+		//Log.v("package", "eventType" + event.eventTypeToString(event.getEventType()));
+		//Log.v("package", "className" + event.getClassName());
 		if (eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
 			// 如果是通知栏事件，则判断是不是红包通知，是则打开通知,进入有红包的聊天界面
 			String text = String.valueOf(event.getText());
@@ -113,6 +115,11 @@ public class QQEnvelopeService extends AccessibilityService {
 		else  if (eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED 
 				&& "android.widget.AbsListView".equalsIgnoreCase(String.valueOf(event.getClassName()))) {
 			processMessage(event);
+		}
+		else if (eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED 
+				&& "android.widget.TextView".equalsIgnoreCase(String.valueOf(event.getClassName()))) {
+			// 监听其他群的红包通知
+			processOthersMessage(event);
 		}
 	}
 
@@ -163,7 +170,7 @@ public class QQEnvelopeService extends AccessibilityService {
 					.getClassName())) {
 				nowStage = StageEnum.fetching.name();
 				// 聊天窗体，点开红包
-				scanAndOpenEnvelope(event);
+				scanAndOpenEnvelope(event.getSource());
 			} else if (OnOffHelper.autoBackFlag 
 					&& "cooperation.qwallet.plugin.QWalletPluginProxyActivity".equals(event.getClassName())
 					&& nowStage.equalsIgnoreCase(StageEnum.opened.name())) {
@@ -174,8 +181,39 @@ public class QQEnvelopeService extends AccessibilityService {
 			else if ("android.widget.AbsListView".equals(event.getClassName())) {
 				nowStage = StageEnum.fetching.name();
 				// 没有正在拆的包，则拆开当前包
-				scanAndOpenEnvelope(event);
+				scanAndOpenEnvelope(event.getSource());
 			}			
+		}
+	}
+	
+	/**
+	 * 处理其他联系人以及群的消息 
+	 * Description: <br> 
+	 *  
+	 * @author lei.qiang<br>
+	 * @taskId <br>
+	 * @param event <br>
+	 */
+	private void processOthersMessage(AccessibilityEvent event) {
+		if (nowStage.equalsIgnoreCase(StageEnum.opening.name())) {
+			// 有正在拆的包，则将当前包加入队列
+			return;
+		}
+		else {
+			/*
+			 *  非拆红包阶段，进行下列处理
+			 *  1. 正在拆红包，则等待拆红包，不进行后续处理，优化性能
+			 *  2. 避免误返回
+			 */
+			nowStage = StageEnum.fetching.name();
+			AccessibilityNodeInfo rootNode = event.getSource();
+			if (null != rootNode) {
+				List<AccessibilityNodeInfo> nodes = rootNode.findAccessibilityNodeInfosByText(QQEnvelopeHelper.ENVELOPE_TEXT_KEY);
+				if (null != nodes && !nodes.isEmpty()) {
+					nodes.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+					scanAndOpenEnvelope(getRootInActiveWindow());
+				}
+			}
 		}
 	}
 
@@ -187,16 +225,12 @@ public class QQEnvelopeService extends AccessibilityService {
 	 * @taskId <br> <br>
 	 */
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-	private void scanAndOpenEnvelope(AccessibilityEvent event) {
+	private void scanAndOpenEnvelope(AccessibilityNodeInfo rootNode) {
 		nowStage = StageEnum.opening.name();
 		// 当前事件所属的信息节点
-		AccessibilityNodeInfo rootNode = event.getSource();
-		
 		if (rootNode == null) {
 			return;
 		}
-		// 查找聊天界面中的发送按钮，应该是全局唯一
-		initGlobalSendButton(rootNode);
 		// 处理普通红包
 		openGenEnvelope(rootNode);
 		// 处理口令红包
@@ -215,8 +249,7 @@ public class QQEnvelopeService extends AccessibilityService {
 	 * @taskId <br>
 	 * @param rootNode <br>
 	 */
-	private void initGlobalSendButton(AccessibilityNodeInfo rootNode) {
-		if (null == sendNode) {
+	private boolean initGlobalSendButton(AccessibilityNodeInfo rootNode) {
 			List<AccessibilityNodeInfo> sendBtnlist = rootNode
 					.findAccessibilityNodeInfosByText(QQEnvelopeHelper.GLOBAL_SENT_TEXT_KEY);
 			if (null != sendBtnlist && !sendBtnlist.isEmpty()) {
@@ -224,11 +257,12 @@ public class QQEnvelopeService extends AccessibilityService {
 					if (node.getClassName().toString().equals(QQEnvelopeHelper.GLOBAL_SEND_BUTTON_KEY) 
 							&& node.getText().toString().equals(QQEnvelopeHelper.GLOBAL_SENT_TEXT_KEY)) {
 						sendNode = node;
-						break;
+						return true;
 					}
 				}
 			}
-		}
+			
+			return false;
 	}
 	
 	/**
@@ -326,8 +360,11 @@ public class QQEnvelopeService extends AccessibilityService {
 				if (null != inputlist && !inputlist.isEmpty()) {
 					// 点击输入口令
 					inputlist.get(0).getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
+					// 查找聊天界面中的发送按钮，应该是全局唯一
 					// 点击全局发送按钮
-					sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+					if (null != sendNode || initGlobalSendButton(rootNode)) {
+						sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+					}
 				}
 			}
 		}

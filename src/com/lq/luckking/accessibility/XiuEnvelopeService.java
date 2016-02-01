@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -116,7 +117,10 @@ public class XiuEnvelopeService extends AccessibilityService {
 		if (StageEnum.fetched.name().equalsIgnoreCase(nowStage)) {
 			final AccessibilityNodeInfo parent = getRootInActiveWindow();
 			if (null != parent 
-					&& parent.getChildCount() > 3) {
+					&& parent.getChildCount() > 0) {
+				for (int j = 0; j < parent.getChildCount(); j++) {
+					Log.v("package", "noed : " + parent.getChild(j));
+				}
 				final int lastNodeIndex = parent.getChildCount() - 1;
 				if ("android.widget.button".equalsIgnoreCase(String.valueOf(parent.getChild(lastNodeIndex).getClassName()))) {
 					nowStage = StageEnum.opening.name();
@@ -147,24 +151,29 @@ public class XiuEnvelopeService extends AccessibilityService {
 		if (StageEnum.fetched.name().equalsIgnoreCase(nowStage)) {
 			final AccessibilityNodeInfo parent = getRootInActiveWindow();
 			if (null != parent 
-					&& parent.getChildCount() > 10) {
-				final int lastNodeIndex = parent.getChildCount() - 1;
-				if ("android.widget.button".equalsIgnoreCase(String.valueOf(parent.getChild(lastNodeIndex).getClassName()))) {
-					nowStage = StageEnum.fetching.name();
-					new Thread(new Runnable() {
-						
-						@Override
-						public void run() {
-							do {
-								parent.getChild(lastNodeIndex).performAction(AccessibilityNodeInfo.ACTION_CLICK);
-								try {
-									Thread.sleep(100);
-								} catch (InterruptedException e) {
-									Log.v("package", "有异常？");
-								}
-							} while (StageEnum.fetching.name().equalsIgnoreCase(nowStage));							
-						}
-					}) .start();
+					&& parent.getChildCount() > 0) {
+				for (int i = parent.getChildCount() - 1; i >= 0; i--) {
+					final AccessibilityNodeInfo temNode = parent.getChild(i);
+					if ("android.widget.button".equalsIgnoreCase(String.valueOf(temNode.getClassName()))
+							&& temNode.getChildCount() == 0 
+							&& TextUtils.isEmpty(temNode.getText())) {
+						nowStage = StageEnum.fetching.name();
+						new Thread(new Runnable() {
+							
+							@Override
+							public void run() {
+								do {
+									temNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+									try {
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										Log.v("package", "有异常？");
+									}
+								} while (StageEnum.fetching.name().equalsIgnoreCase(nowStage));							
+							}
+						}) .start();
+						return;
+					}
 				}
 			}
 			else {
