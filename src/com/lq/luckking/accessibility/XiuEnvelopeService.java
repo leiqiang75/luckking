@@ -101,7 +101,7 @@ public class XiuEnvelopeService extends AccessibilityService {
 			Log.v("package", "packageName : " + event.getPackageName());
 			Log.v("package", "ui : " + event.getClassName());
 			nowStage = StageEnum.fetched.name();
-			openEnvelope();
+			//openEnvelope();
 		}
 	}
 
@@ -165,7 +165,7 @@ public class XiuEnvelopeService extends AccessibilityService {
 								do {
 									temNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
 									try {
-										Thread.sleep(100);
+										Thread.sleep(80);
 									} catch (InterruptedException e) {
 										Log.v("package", "有异常？");
 									}

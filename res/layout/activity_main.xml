@@ -35,4 +35,12 @@
             android:padding="10dp"
             android:text="@string/btn_auto_back_start"
             android:textSize="18sp" />
+
+        <Switch
+            android:id="@+id/switch1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Switch" 
+            />
+
 </LinearLayout>
